@@ -1,7 +1,7 @@
 ﻿using ApplicationDatabase.Context;
 using Infrastructure.Entities.Pills;
 using Microsoft.EntityFrameworkCore;
-using ReminderApi.Interfaces;
+using ReminderApi.Interfaces.Pills;
 
 namespace ReminderApi.Repositories.Pills;
 
@@ -18,21 +18,15 @@ public class PillRepository : IPillRepository
     {
         return await _context.Pills.ToListAsync();
     }
-    
-    public async Task<ICollection<Pill>> GetAllPillNames()
+
+    public async Task<ICollection<Pill>> GetPillByName(string name)
     {
-        return await _context.Pills
-            .Select(p => new Pill
-            {
-                Id = p.Id,
-                Name = p.Name
-            })
-            .ToListAsync();
+        return await _context.Pills.Where(p => p.Name.Contains(name)).ToListAsync();
     }
 
-    public async Task<Pill> GetPill(Guid Id)
+    public async Task<Pill> GetPill(Guid id)
     {
-        var targetPill = await _context.Pills.FirstOrDefaultAsync(p => p.Id == Id);
+        var targetPill = await _context.Pills.FirstOrDefaultAsync(p => p.Id == id);
         
         // if (targetPill != null)
         // {
@@ -63,11 +57,11 @@ public class PillRepository : IPillRepository
         return false;
     }
 
-    public async Task<bool> DeletePill(Guid Id)
+    public async Task<bool> DeletePill(Guid id)
     {
         try
         {
-            Pill pill = await GetPill(Id);
+            Pill pill = await GetPill(id);
             _context.Pills.Remove(pill);
             await _context.SaveChangesAsync();
             return true;
@@ -81,11 +75,11 @@ public class PillRepository : IPillRepository
         return false;
     }
 
-    public async Task<bool> UpdatePill(Guid Id, Pill pill)
+    public async Task<bool> UpdatePill(Guid id, Pill pill)
     {
         try
         {
-            Pill currentPill = await GetPill(Id);
+            Pill currentPill = await GetPill(id);
 
             currentPill.Name = pill.Name;
             currentPill.Description = pill.Description;
@@ -102,6 +96,30 @@ public class PillRepository : IPillRepository
             Console.WriteLine(e);
         }
 
+        return false;
+    }
+
+    public async Task<bool> FetchPill()
+    {
+        try
+        {
+
+            Parser parser = new Parser(new HttpClient(), this);
+
+            List<string> links = parser.GetLinksToPill().GetAwaiter().GetResult();
+
+            foreach (string link in links)
+            {
+                await parser.FetchPillInformationAsync(link);
+            }
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("При попытке получить данные о лекарстве произошла ошибка!");
+            Console.WriteLine(e);
+        }
+        
         return false;
     }
 }

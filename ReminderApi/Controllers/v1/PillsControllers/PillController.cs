@@ -1,6 +1,6 @@
 ﻿using Infrastructure.Entities.Pills;
 using Microsoft.AspNetCore.Mvc;
-using ReminderApi.Interfaces;
+using ReminderApi.Interfaces.Pills;
 
 namespace ReminderApi.Controllers.v1.PillsControllers;
 
@@ -29,16 +29,16 @@ public class PillController : ControllerBase
 
         return Ok(pills);
     }
-    
-    [HttpGet("get_all_pill_names")]
+
+    [HttpGet("get_pills_by_name")]
     [ProducesResponseType(typeof(List<Pill>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetAllPillNames()
+    public async Task<IActionResult> GetPillsByName(string name)
     {
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var pills = await _pillRepository.GetAllPillNames();
+        var pills = await _pillRepository.GetPillByName(name);
 
         return Ok(pills);
     }
@@ -97,5 +97,28 @@ public class PillController : ControllerBase
         var updatedPill = await _pillRepository.UpdatePill(id, pill);
 
         return Ok(updatedPill);
+    }
+    
+    [HttpGet("fetch_pill")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> FetchPill()
+    {
+        if (!ModelState.IsValid)
+            return BadRequest();
+
+        bool result = false;
+        
+        try
+        {
+            result = await _pillRepository.FetchPill();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Во время получения данных о лекарствах в базу произошла ошибка: {e}");
+            _logger.LogInformation("Во время получения данных о лекарствах в базу произошла ошибка");
+        }
+
+        return Ok(result);
     }
 }

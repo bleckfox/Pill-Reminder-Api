@@ -1,6 +1,7 @@
 using ApplicationDatabase.Context;
 using Infrastructure.AppEnvironment;
 using ReminderApi.Interfaces;
+using ReminderApi.Interfaces.Pills;
 using ReminderApi.Repositories.Pills;
 
 var builder = WebApplication.CreateBuilder(args);
