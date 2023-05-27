@@ -9,4 +9,9 @@ public class AppSettings
     /// Строка подключения к базе данных
     /// </summary>
     public string ConnectionString { get; set; } = null!;
+
+    /// <summary>
+    /// Токен для админов
+    /// </summary>
+    public string AdminToken { get; set; } = null!;
 }

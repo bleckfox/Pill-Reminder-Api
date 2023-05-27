@@ -1,5 +1,7 @@
-﻿using Infrastructure.Entities.Pills;
+﻿using Infrastructure.AppEnvironment;
+using Infrastructure.Entities.Pills;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using ReminderApi.Interfaces.Pills;
 
 namespace ReminderApi.Controllers.v1.PillsControllers;
@@ -10,13 +12,19 @@ public class PillController : ControllerBase
 {
     private readonly ILogger<PillController> _logger;
     private readonly IPillRepository _pillRepository;
+    private readonly AppSettings _appSettings;
 
-    public PillController(ILogger<PillController> logger, IPillRepository pillRepository)
+    public PillController(ILogger<PillController> logger, IPillRepository pillRepository, IOptions<AppSettings> appSettingsOptions)
     {
         _logger = logger;
         _pillRepository = pillRepository;
+        _appSettings = appSettingsOptions.Value;
     }
 
+    /// <summary>
+    /// Получение всего списка лекарств. Маршрут сервер:порт/api/v1/pills/get_all_pills
+    /// </summary>
+    /// <returns>Весь список лекарств</returns>
     [HttpGet("get_all_pills")]
     [ProducesResponseType(typeof(List<Pill>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -30,6 +38,11 @@ public class PillController : ControllerBase
         return Ok(pills);
     }
 
+    /// <summary>
+    /// Получение всего списка лекарств, у которого похожее наименование. Маршрут сервер:порт/api/v1/pills/get_pills_by_name
+    /// </summary>
+    /// <param name="name">Наименование лекарства (строка)</param>
+    /// <returns>Список лекарств с заданным наименованием</returns>
     [HttpGet("get_pills_by_name")]
     [ProducesResponseType(typeof(List<Pill>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -42,7 +55,12 @@ public class PillController : ControllerBase
 
         return Ok(pills);
     }
-
+    
+    /// <summary>
+    /// Получение информации о конкретном лекарстве по идентификатору. Маршрут сервер:порт/api/v1/pills/get_pill
+    /// </summary>
+    /// <param name="id">Идентификатор</param>
+    /// <returns>Информация о конкретном лекарстве</returns>
     [HttpGet("get_pill")]
     [ProducesResponseType(typeof(Pill), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -56,10 +74,17 @@ public class PillController : ControllerBase
         return Ok(pill);
     }
 
+    /// <summary>
+    /// Создание записи о конкретном лекарстве. Маршрут сервер:порт/api/v1/pills/create_pill
+    /// </summary>
+    /// <param name="name">наименование</param>
+    /// <param name="link">ссылка</param>
+    /// <param name="description">описание</param>
+    /// <returns></returns>
     [HttpPost("create_pill")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreatePill(string name, string link, string description)
+    private async Task<IActionResult> CreatePill(string name, string link, string description)
     {
         if (!ModelState.IsValid)
             return BadRequest();
@@ -71,10 +96,15 @@ public class PillController : ControllerBase
         return Ok(createdPill);
     }
     
+    /// <summary>
+    /// Удаление записи о лекарстве. . Маршрут сервер:порт/api/v1/pills/delete_pill
+    /// </summary>
+    /// <param name="id">идентификатор</param>
+    /// <returns></returns>
     [HttpDelete("delete_pill")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeletePill(Guid id)
+    private async Task<IActionResult> DeletePill(Guid id)
     {
         if (!ModelState.IsValid)
             return BadRequest();
@@ -84,10 +114,18 @@ public class PillController : ControllerBase
         return Ok(result);
     }
     
+    /// <summary>
+    /// Метод обновления данных о конкретном лекарстве. Маршрут сервер:порт/api/v1/pills/update_pill
+    /// </summary>
+    /// <param name="id">идентификатор</param>
+    /// <param name="name">наименование</param>
+    /// <param name="link">ссылка</param>
+    /// <param name="description">описание</param>
+    /// <returns>Признак удалось ли обновить информацию (true / false) </returns>
     [HttpPut("update_pill")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdatePill(Guid id, string name, string link, string description)
+    private async Task<IActionResult> UpdatePill(Guid id, string name, string link, string description)
     {
         if (!ModelState.IsValid)
             return BadRequest();
@@ -99,12 +137,17 @@ public class PillController : ControllerBase
         return Ok(updatedPill);
     }
     
+    /// <summary>
+    /// Запуск парсера данных с сайта в базу. Маршрут сервер:порт/api/v1/pills/fetch_pill
+    /// </summary>
+    /// <param name="token">Токен администратора</param>
+    /// <returns>Признак удалось ли загрузить данные (true / false)</returns>
     [HttpGet("fetch_pill")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> FetchPill()
+    public async Task<IActionResult> FetchPill(string token)
     {
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid || _appSettings.AdminToken != token)
             return BadRequest();
 
         bool result = false;
